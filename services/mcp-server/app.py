@@ -587,12 +587,46 @@ async def handle_tools_list() -> Dict[str, Any]:
                     }
                 }
             }
-        }
+        },
+        {
+            "name": "get_random_fact",
+            "description": "Get a random interesting fact",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "category": {
+                        "type": "string",
+                        "enum": ["general", "space"],
+                        "description": "Category of fact"
+                    }
+                },
+                "required": ["category"]
+            }
+        },
         # LEGG TIL DINE NYE TOOLS HER!
         # Bare kopier strukturen over og tilpass for ditt brukstilfelle
     ]
 
     return {"tools": tools}
+
+async def get_random_fact(category: str = "general") -> Dict[str, Any]:
+    """Because every AI needs useless trivia."""
+    facts = {
+        "general": [
+            "Honey never spoils. 3000-year-old honey found in Egyptian tombs — still edible.",
+            "Octopuses have three hearts."
+        ],
+        "space": [
+            "A day on Venus is longer than its year.",
+            "Neutron stars are so dense a teaspoon weighs 6 billion tons."
+        ]
+    }
+    import random
+    return {
+        "category": category,
+        "fact": random.choice(facts.get(category, facts["general"])),
+        "timestamp": datetime.now().isoformat()
+    }
 
 async def handle_tools_call(tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -629,6 +663,14 @@ async def handle_tools_call(tool_name: str, arguments: Dict[str, Any]) -> Dict[s
         # Returner suksess
         return {
             "content": [{"type": "text", "text": json.dumps(result, ensure_ascii=False, indent=2)}],
+            "structuredContent": result,
+            "isError": False
+        }
+
+    elif tool_name == "get_random_fact":
+        result = await get_random_fact(arguments.get("category", "general"))
+        return {
+            "content": [{"type": "text", "text": json.dumps(result)}],
             "structuredContent": result,
             "isError": False
         }
